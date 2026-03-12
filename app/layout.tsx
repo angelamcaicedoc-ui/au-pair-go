@@ -1,4 +1,12 @@
 import type { Metadata } from "next";
+copilot/au-pair-go-mvp-structure
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Au Pair Go — Tu guía inteligente en EE.UU.",
+  description:
+    "Aplicación web con IA para au pairs hispanohablantes en EE.UU. Cuidado de niños, trámites DMV, programa au pair y más.",
+
 import Link from "next/link";
 import "./globals.css";
 
@@ -6,6 +14,7 @@ export const metadata: Metadata = {
   title: "Au Pair Go — Tu asistente inteligente",
   description:
     "Aplicación web con IA para au pairs hispanohablantes en EE.UU. Cuidado infantil, DMV, programa au pair y más.",
+ main
 };
 
 export default function RootLayout({
@@ -15,6 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
+ copilot/au-pair-go-mvp-structure
+      <body className="antialiased">{children}</body>
+
       <body className="antialiased bg-gray-50 min-h-screen font-sans">
         <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -44,6 +56,7 @@ export default function RootLayout({
           </p>
         </footer>
       </body>
+ main
     </html>
   );
 }
