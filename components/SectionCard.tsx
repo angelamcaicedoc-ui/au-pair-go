@@ -26,7 +26,7 @@ export default function SectionCard({ section }: SectionCardProps) {
                 {section.icon}
               </div>
               <h3 className={`${quicksand.className} font-bold text-gray-800 text-xl mb-2`}>
-                {section.title || section.label}
+                {section.label}
               </h3>
               <p className="text-sm text-gray-600 leading-relaxed font-medium">
                 {section.description}
@@ -43,7 +43,7 @@ export default function SectionCard({ section }: SectionCardProps) {
                 {section.icon}
               </div>
               <h3 className={`${quicksand.className} font-bold text-gray-700 text-xl mb-2`}>
-                {section.title || section.label}
+                {section.label}
               </h3>
               <p className="text-sm text-gray-500 leading-relaxed font-medium">
                 {section.description}
