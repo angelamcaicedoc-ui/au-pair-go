@@ -146,7 +146,7 @@ export default function Profile({ onProfileChange }: ProfileProps) {
                 <select
                   value={draft.nivelIngles || "basico"}
                   onChange={(e) =>
-                    updateDraft("nivelIngles", e.target.value as UserProfile["nivelIngles"])
+                    updateDraft("nivelIngles", e.target.value)
                   }
                   className="w-full bg-white/70 border border-white shadow-sm rounded-xl px-4 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#B19CD9] focus:bg-white transition-all appearance-none"
                 >
