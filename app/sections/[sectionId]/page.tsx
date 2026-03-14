@@ -1,15 +1,31 @@
- copilot/au-pair-go-mvp-structure
-import { getSectionById } from "@/lib/sections/sections";
+import { notFound } from "next/navigation";
+import { getSectionById, sections } from "@/lib/sections/sections";
 import { getSectionContent } from "@/lib/contentLoader";
 import { SectionClient } from "@/components/SectionClient";
-import { notFound } from "next/navigation";
+
+// Permite que Next.js genere rutas estáticas para todas las secciones disponibles
+export function generateStaticParams() {
+  return sections
+    .filter((s) => s.available)
+    .map((s) => ({ sectionId: s.id }));
+}
 
 interface SectionPageProps {
-  params: Promise<{ sectionId: string }>;
+  params: { sectionId: string };
+}
+
+// Opcional: metadatos personalizados por sección
+export async function generateMetadata({ params }: SectionPageProps) {
+  const section = getSectionById(params.sectionId);
+  if (!section) return {};
+  return {
+    title: `${section.label} — Au Pair Go`,
+    description: section.description,
+  };
 }
 
 export default async function SectionPage({ params }: SectionPageProps) {
-  const { sectionId } = await params;
+  const sectionId = params.sectionId;
   const section = getSectionById(sectionId);
 
   if (!section) {
@@ -46,39 +62,4 @@ export default async function SectionPage({ params }: SectionPageProps) {
       sectionContent={sectionContent}
     />
   );
-=======
-import { notFound } from "next/navigation";
-import { getSectionById, sections } from "@/lib/sections/sections";
-import SectionPageClient from "./SectionPageClient";
-
-interface Props {
-  params: Promise<{ sectionId: string }>;
-}
-
-export function generateStaticParams() {
-  return sections
-    .filter((s) => s.available)
-    .map((s) => ({ sectionId: s.id }));
-}
-
-export async function generateMetadata({ params }: Props) {
-  const { sectionId } = await params;
-  const section = getSectionById(sectionId);
-  if (!section) return {};
-  return {
-    title: `${section.title} — Au Pair Go`,
-    description: section.description,
-  };
-}
-
-export default async function SectionPage({ params }: Props) {
-  const { sectionId } = await params;
-  const section = getSectionById(sectionId);
-
-  if (!section || !section.available) {
-    notFound();
-  }
-
-  return <SectionPageClient section={section} />;
- main
 }

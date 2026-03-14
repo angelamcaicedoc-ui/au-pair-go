@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-copilot/au-pair-go-mvp-structure
-import { MAX_CHAT_HISTORY } from "@/lib/chatUtils";
+import { getSystemPrompt } from "@/lib/prompts/index";
 
-// Import prompts by section
-import { systemPrompt as toddlerPrompt } from "@/lib/prompts/toddler-kids-care";
-import { systemPrompt as dmvPrompt } from "@/lib/prompts/dmv-driving";
-import { systemPrompt as auPairPrompt } from "@/lib/prompts/au-pair-program";
+export const runtime = "nodejs";
 
-const SECTION_PROMPTS: Record<string, string> = {
-  "toddler-kids-care": toddlerPrompt,
-  "dmv-driving": dmvPrompt,
-  "au-pair-program": auPairPrompt,
-};
+const MAX_CHAT_HISTORY = 10;
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -32,32 +24,15 @@ function validateResponse(text: string): string {
   if (!text || text.trim().length === 0) {
     return "Lo siento, no pude generar una respuesta. Por favor intenta de nuevo.";
   }
-  if (text.length > 4000) {
-    return text.slice(0, 4000) + "\n\n[Respuesta recortada por longitud]";
-  }
   return text;
 }
 
 // Guardrail: check if message contains emergency keywords
 function containsEmergency(message: string): boolean {
   const emergencyKeywords = [
-    "emergencia",
-    "emergency",
-    "911",
-    "no respira",
-    "not breathing",
-    "inconsciente",
-    "unconscious",
-    "sangrado",
-    "bleeding",
-    "accidente",
-    "accident",
-    "atacando",
-    "attacking",
-    "peligro",
-    "danger",
-    "ayuda urgente",
-    "urgent help",
+    "emergencia", "emergency", "911", "no respira", "not breathing",
+    "inconsciente", "unconscious", "sangrado", "bleeding", "accidente",
+    "accident", "atacando", "attacking", "peligro", "danger", "ayuda urgente", "urgent help"
   ];
   const lower = message.toLowerCase();
   return emergencyKeywords.some((kw) => lower.includes(kw));
@@ -66,75 +41,46 @@ function containsEmergency(message: string): boolean {
 export async function POST(req: NextRequest) {
   try {
     const body: ChatRequest = await req.json();
-    const { section, history, profile, content, userMessage } = body;
+    const { section, history = [], profile, content, userMessage } = body;
 
     // Validate required fields
     if (!section || !userMessage) {
       return NextResponse.json(
         { error: "Faltan campos requeridos: section y userMessage son obligatorios." },
-
-import { getSystemPrompt } from "@/lib/prompts/index";
-import { getSectionContent } from "@/content/sections/index";
-import { buildProfileContext } from "@/lib/profile";
-import { validateUserMessage, validateAIResponse } from "@/lib/validation";
-
-export const runtime = "nodejs";
-
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { message, sectionId, history = [], profile } = body;
-
-    if (!message || !sectionId) {
-      return NextResponse.json(
-        { error: "Faltan parámetros: message y sectionId son requeridos." },
-main
         { status: 400 }
       );
     }
 
- copilot/au-pair-go-mvp-structure
     // Emergency guardrail
     if (containsEmergency(userMessage)) {
       return NextResponse.json({
-        reply:
-          "⚠️ **Parece que hay una emergencia.** Por favor llama al **911** inmediatamente si alguien está en peligro. Si es una situación de violencia doméstica, llama al 1-800-799-7233 (en español, 24/7).",
+        reply: "⚠️ **Parece que hay una emergencia.** Por favor llama al **911** inmediatamente si alguien está en peligro. Si es una situación de violencia doméstica, llama al 1-800-799-7233 (en español, 24/7).",
       });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const apiKey = (process.env.GEMINI_API_KEY || "").trim();
+    const modelName = (process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
 
     if (!apiKey) {
       return NextResponse.json(
         { error: "GEMINI_API_KEY no configurada. Revisa tu archivo .env.local." },
-
-    const validation = validateUserMessage(message);
-    if (!validation.valid) {
-      return NextResponse.json({ error: validation.error }, { status: 400 });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Error de configuración del servidor." },
- main
         { status: 500 }
       );
     }
 
- copilot/au-pair-go-mvp-structure
     // Get system prompt for section
-    const sectionPrompt = SECTION_PROMPTS[section];
-    if (!sectionPrompt) {
-      return NextResponse.json(
-        { error: `Sección desconocida: ${section}` },
-        { status: 400 }
-      );
-    }
+    let sectionIdForPrompt = section;
+    if (section === "cuidado-ninos") sectionIdForPrompt = "toddler";
+    const sectionPrompt = getSystemPrompt(sectionIdForPrompt);
 
     // Build full system prompt with profile and content context
     let fullSystemPrompt = sectionPrompt;
+    
+    // NATIVE LENGTH GUARDRAIL INSTRUCTION
+    fullSystemPrompt += `\n\n**REGLA MUY IMPORTANTE DE FORMATO:**\nTus respuestas deben ser concisas y directas. NUNCA excedas los 3 párrafos de longitud. Si la pregunta requiere mucha información, ofrece solo las 2 o 3 opciones más relevantes y pregunta si desean saber más detalles.`;
+
+    // ENGLISH COACHING INSTRUCTION
+    fullSystemPrompt += `\n\n**OBLIGATORIO - TUTOR DE INGLÉS:**\nREGLA ESTRICTA: SIEMPRE que sugieras una actividad (ir al parque, picnic, jugar, cocinar, etc.), ES OBLIGATORIO que tu respuesta termine con una sección separada llamada "💡 Dilo en Inglés:". En esta sección, debes darle a la au pair 2 o 3 frases exactas y divertidas de cómo proponerle la actividad a los niños en inglés (ej. "Hey guys, let's have a picnic!", "What do you think if we cook pizza?"). Adapta el vocabulario según su nivel de inglés. ¡NUNCA omitas esta sección si sugieres una actividad!`;
 
     // Add profile context
     if (profile && Object.keys(profile).length > 0) {
@@ -142,10 +88,10 @@ main
       if (profile.estado) profileParts.push(`Estado: ${profile.estado}`);
       if (profile.ciudad) profileParts.push(`Ciudad: ${profile.ciudad}`);
       if (profile.codigoPostal) profileParts.push(`Código Postal: ${profile.codigoPostal}`);
-      if (profile.edadesKids) profileParts.push(`Edades de los niños: ${profile.edadesKids}`);
+      if (profile.edadesNinos) profileParts.push(`Edades de los niños: ${profile.edadesNinos}`);
       if (profile.alergias) profileParts.push(`Alergias/restricciones: ${profile.alergias}`);
       if (profile.conduce) profileParts.push(`Conduce: Sí`);
-      if (profile.ingles) profileParts.push(`Nivel de inglés: ${profile.ingles}`);
+      if (profile.nivelIngles) profileParts.push(`Nivel de inglés: ${profile.nivelIngles}`);
 
       if (profileParts.length > 0) {
         fullSystemPrompt += `\n\n**Perfil de la au pair:**\n${profileParts.join("\n")}`;
@@ -163,35 +109,44 @@ main
     const model = genAI.getGenerativeModel({
       model: modelName,
       systemInstruction: fullSystemPrompt,
+      generationConfig: {
+        maxOutputTokens: 2500, // Raised to allow full detailed responses with English tutoring
+      }
     });
 
-    // Build chat history (last MAX_CHAT_HISTORY messages, alternating user/model)
-    const chatHistory = (history || [])
-      .slice(-MAX_CHAT_HISTORY)
+    // Build chat history
+    let validHistory = history
       .filter((msg) => msg.role === "user" || msg.role === "assistant")
       .map((msg) => ({
         role: msg.role === "user" ? "user" : "model",
         parts: [{ text: msg.content }],
       }));
 
-    // Start chat session
-    const chat = model.startChat({
-      history: chatHistory,
-    });
+    // Gemini requires the first message to be from the user.
+    // Keep slicing from the start until the first message is a user message.
+    while (validHistory.length > 0 && validHistory[0].role !== "user") {
+      validHistory.shift();
+    }
 
-    // Send message
+    // Limit to max history
+    validHistory = validHistory.slice(-MAX_CHAT_HISTORY);
+
+    // If after slicing it still starts with a model, shift again
+    while (validHistory.length > 0 && validHistory[0].role !== "user") {
+      validHistory.shift();
+    }
+
+    // Start chat session
+    const chat = model.startChat({ history: validHistory });
     const result = await chat.sendMessage(userMessage);
     const responseText = result.response.text();
 
-    // Validate and return
     const validatedReply = validateResponse(responseText);
 
     return NextResponse.json({ reply: validatedReply });
   } catch (error) {
     console.error("Error en /api/chat:", error);
-
     if (error instanceof Error) {
-      // Don't expose internal error details
       if (error.message.includes("API key")) {
         return NextResponse.json(
           { error: "Error de autenticación con la IA. Verifica tu GEMINI_API_KEY." },
@@ -205,48 +160,6 @@ main
         );
       }
     }
-
-=======
-    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    const systemPrompt =
-      getSystemPrompt(sectionId) +
-      (profile ? buildProfileContext(profile) : "") +
-      "\n\n## Contenido de referencia de esta sección\n" +
-      getSectionContent(sectionId);
-
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction: systemPrompt,
-    });
-
-    // Build history for Gemini (last 10 messages)
-    const recentHistory = history.slice(-10);
-    const chatHistory = recentHistory.map(
-      (msg: { role: string; content: string }) => ({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-      })
-    );
-
-    const chat = model.startChat({ history: chatHistory });
-    const result = await chat.sendMessage(message);
-    const responseText = result.response.text();
-
-    const responseValidation = validateAIResponse(responseText);
-    if (!responseValidation.valid) {
-      return NextResponse.json(
-        { error: "Error procesando la respuesta." },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ response: responseText });
-  } catch (error) {
-    console.error("Error in /api/chat:", error);
-main
     return NextResponse.json(
       { error: "Error interno del servidor. Por favor intenta de nuevo." },
       { status: 500 }

@@ -1,11 +1,11 @@
 export interface UserProfile {
-  estado: string;
-  ciudad: string;
-  codigoPostal: string;
-  edadesKids: string;
-  alergias: string;
-  conduce: boolean;
-  ingles: string;
+  estado?: string;
+  ciudad?: string;
+  codigoPostal?: string;
+  edadesNinos?: string;
+  alergias?: string;
+  nivelIngles?: "basico" | "intermedio" | "avanzado";
+  conduce?: boolean;
 }
 
 export interface ChatMessage {
@@ -13,7 +13,7 @@ export interface ChatMessage {
   content: string;
 }
 
-export const PROFILE_KEY = "aupair_profile";
+export const PROFILE_KEY = "aupairgo_profile";
 export const IA_COUNT_KEY = "aupair_ia_count";
 export const FREE_LIMIT = 30;
 export const MAX_CHAT_HISTORY = 10;
@@ -43,10 +43,10 @@ export function getDefaultProfile(): UserProfile {
     estado: "",
     ciudad: "",
     codigoPostal: "",
-    edadesKids: "",
+    edadesNinos: "",
     alergias: "",
     conduce: false,
-    ingles: "",
+    nivelIngles: "basico",
   };
 }
 
@@ -90,10 +90,10 @@ export function formatProfileForPrompt(profile: UserProfile): string {
   if (profile.estado) parts.push(`Estado: ${profile.estado}`);
   if (profile.ciudad) parts.push(`Ciudad: ${profile.ciudad}`);
   if (profile.codigoPostal) parts.push(`Código Postal: ${profile.codigoPostal}`);
-  if (profile.edadesKids) parts.push(`Edades de los niños: ${profile.edadesKids}`);
+  if (profile.edadesNinos) parts.push(`Edades de los niños: ${profile.edadesNinos}`);
   if (profile.alergias) parts.push(`Alergias/restricciones: ${profile.alergias}`);
   if (profile.conduce) parts.push(`Conduce: Sí`);
-  if (profile.ingles) parts.push(`Nivel de inglés: ${profile.ingles}`);
+  if (profile.nivelIngles) parts.push(`Nivel de inglés: ${profile.nivelIngles}`);
   if (parts.length === 0) return "No se ha configurado perfil.";
   return parts.join(", ");
 }

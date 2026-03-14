@@ -1,8 +1,15 @@
 "use client";
 
- copilot/au-pair-go-mvp-structure
 import React, { useState, useEffect, useRef } from "react";
-import { ChatMessage, loadChatHistory, saveChatHistory, loadIaCount, incrementIaCount, FREE_LIMIT, MAX_CHAT_HISTORY } from "@/lib/chatUtils";
+import {
+  ChatMessage,
+  loadChatHistory,
+  saveChatHistory,
+  loadIaCount,
+  incrementIaCount,
+  FREE_LIMIT,
+  MAX_CHAT_HISTORY,
+} from "@/lib/chatUtils";
 import { UserProfile } from "@/lib/chatUtils";
 
 interface ChatProps {
@@ -13,32 +20,10 @@ interface ChatProps {
 }
 
 export function Chat({ sectionId, sectionContent, profile, onCountUpdate }: ChatProps) {
-=======
-import { useState, useEffect, useRef, startTransition } from "react";
-import {
-  ChatMessage,
-  getChatHistory,
-  saveChatHistory,
-  clearChatHistory,
-  getMessageCount,
-  incrementMessageCount,
-  isFreeLimitReached,
-  FREE_MESSAGE_LIMIT,
-} from "@/lib/chat";
-import { UserProfile, defaultProfile } from "@/lib/profile";
-
-interface ChatProps {
-  sectionId: string;
-  sectionTitle: string;
-}
-
-export default function Chat({ sectionId, sectionTitle }: ChatProps) {
- main
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
- copilot/au-pair-go-mvp-structure
   const [iaCount, setIaCount] = useState(0);
   const [locationLoading, setLocationLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,35 +33,12 @@ export default function Chat({ sectionId, sectionTitle }: ChatProps) {
     setMessages(history);
     const count = loadIaCount();
     setIaCount(count);
-
-  const [msgCount, setMsgCount] = useState(0);
-  const [limitReached, setLimitReached] = useState(false);
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const history = getChatHistory(sectionId);
-    const count = getMessageCount();
-    startTransition(() => {
-      setMessages(history);
-      setMsgCount(count);
-      setLimitReached(isFreeLimitReached());
-    });
-
-    try {
-      const stored = localStorage.getItem("aupairgo_profile");
-      if (stored) startTransition(() => setProfile(JSON.parse(stored)));
-    } catch {
-      // ignore
-    }
- main
   }, [sectionId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
- copilot/au-pair-go-mvp-structure
   const hasReachedLimit = iaCount >= FREE_LIMIT;
 
   const handleSend = async (messageToSend?: string) => {
@@ -88,19 +50,6 @@ export default function Chat({ sectionId, sectionTitle }: ChatProps) {
     setMessages(updatedHistory);
     saveChatHistory(sectionId, updatedHistory);
 
-  async function sendMessage() {
-    const trimmed = input.trim();
-    if (!trimmed || loading) return;
-
-    if (isFreeLimitReached()) {
-      setLimitReached(true);
-      return;
-    }
-
-    const userMessage: ChatMessage = { role: "user", content: trimmed };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
- main
     setInput("");
     setLoading(true);
     setError(null);
@@ -110,24 +59,16 @@ export default function Chat({ sectionId, sectionTitle }: ChatProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
- copilot/au-pair-go-mvp-structure
           section: sectionId,
-          history: updatedHistory.slice(0, -1), // history without current message
+          history: updatedHistory.slice(0, -1),
           profile,
           content: sectionContent,
           userMessage: text.trim(),
-
-          message: trimmed,
-          sectionId,
-          history: messages.slice(-10),
-          profile,
- main
         }),
       });
 
       const data = await res.json();
 
- copilot/au-pair-go-mvp-structure
       if (!res.ok || data.error) {
         setError(data.error || "Error al obtener respuesta de la IA.");
         return;
@@ -198,12 +139,16 @@ export default function Chat({ sectionId, sectionTitle }: ChatProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[300px] max-h-[400px] bg-gray-50 rounded-xl border border-gray-200">
+      {/* Mensajes */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 min-h-[300px] max-h-[400px] bg-white/40 rounded-2xl border border-white/60 shadow-inner backdrop-blur-sm">
         {messages.length === 0 && (
-          <div className="text-center text-gray-400 py-8">
-            <p className="text-2xl mb-2">💬</p>
-            <p className="text-sm">Comienza la conversación. Puedo ayudarte con preguntas sobre esta sección.</p>
+          <div className="text-center py-10 opacity-70">
+            <div className="w-16 h-16 mx-auto bg-[#9FD7E8]/20 rounded-full flex items-center justify-center text-2xl mb-3 border border-white/50">
+              💬
+            </div>
+            <p className="text-sm font-medium text-gray-600">
+              Comienza la conversación. Puedo ayudarte con preguntas sobre esta sección.
+            </p>
           </div>
         )}
         {messages.map((msg, idx) => (
@@ -212,244 +157,110 @@ export default function Chat({ sectionId, sectionTitle }: ChatProps) {
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-rose-500 text-white rounded-br-sm"
-                  : "bg-white text-gray-800 rounded-bl-sm shadow-sm border border-gray-100"
-              }`}
+              className={`max-w-[85%] rounded-2xl px-5 py-3 text-sm whitespace-pre-wrap leading-relaxed ${msg.role === "user"
+                  ? "bg-gradient-to-br from-[#B19CD9] to-[#9c82c9] text-white rounded-br-sm shadow-md"
+                  : "bg-white/80 backdrop-blur-md text-gray-800 rounded-bl-sm shadow-sm border border-white/60"
+                }`}
             >
               {msg.role === "assistant" && (
-                <span className="text-xs font-semibold text-rose-500 block mb-1">✨ Asistente IA</span>
+                <span className="text-[10px] font-bold text-[#B19CD9] uppercase tracking-widest block mb-1.5 flex items-center gap-1">
+                  <span>✨</span> Asistente IA
+                </span>
               )}
-
-      if (!res.ok) {
-        setError(data.error || "Error al conectar con la IA.");
-        setMessages(messages);
-        return;
-      }
-
-      const aiMessage: ChatMessage = { role: "model", content: data.response };
-      const finalMessages = [...updatedMessages, aiMessage];
-      setMessages(finalMessages);
-      saveChatHistory(sectionId, finalMessages);
-
-      const newCount = incrementMessageCount();
-      setMsgCount(newCount);
-      setLimitReached(newCount >= FREE_MESSAGE_LIMIT);
-    } catch {
-      setError("Error de conexión. Por favor intenta de nuevo.");
-      setMessages(messages);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  function handleClear() {
-    clearChatHistory(sectionId);
-    setMessages([]);
-    setError(null);
-  }
-
-  const remaining = Math.max(0, FREE_MESSAGE_LIMIT - msgCount);
-
-  return (
-    <div className="flex flex-col h-full bg-white rounded-xl border border-gray-200 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🤖</span>
-          <span className="font-semibold text-gray-800 text-sm">
-            IA Experta — {sectionTitle}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">
-            {remaining} mensajes gratis restantes
-          </span>
-          {messages.length > 0 && (
-            <button
-              onClick={handleClear}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors"
-              aria-label="Limpiar chat"
-            >
-              Limpiar
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[300px] max-h-[400px]">
-        {messages.length === 0 && (
-          <div className="text-center text-gray-400 text-sm mt-8">
-            <p className="text-2xl mb-2">💬</p>
-            <p>¡Hola! Soy tu asistente experta en {sectionTitle}.</p>
-            <p className="mt-1">¿En qué puedo ayudarte hoy?</p>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-blue-600 text-white rounded-br-sm"
-                  : "bg-gray-100 text-gray-800 rounded-bl-sm"
-              }`}
-            >
- main
               {msg.content}
             </div>
           </div>
         ))}
- copilot/au-pair-go-mvp-structure
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white text-gray-800 rounded-2xl rounded-bl-sm shadow-sm border border-gray-100 px-4 py-2 text-sm">
-              <span className="text-xs font-semibold text-rose-500 block mb-1">✨ Asistente IA</span>
-              <span className="animate-pulse">Pensando...</span>
+            <div className="bg-white/80 backdrop-blur-md text-gray-800 rounded-2xl rounded-bl-sm shadow-sm border border-white/60 px-5 py-3 text-sm flex items-center gap-3">
+              <span className="text-[10px] font-bold text-[#B19CD9] uppercase tracking-widest flex items-center gap-1">
+                <span>✨</span> IA
+              </span>
+              <span className="flex gap-1">
+                <span className="w-1.5 h-1.5 bg-[#B19CD9] rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-[#B19CD9] rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></span>
+                <span className="w-1.5 h-1.5 bg-[#B19CD9] rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></span>
+              </span>
             </div>
           </div>
         )}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-2 text-sm">
-            ⚠️ {error}
+          <div className="bg-red-50/80 backdrop-blur-sm border border-red-200/50 text-red-700 rounded-xl px-4 py-3 text-sm font-medium shadow-sm flex items-start gap-2">
+            <span>⚠️</span> <span>{error}</span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Limit reached */}
+      {/* Límite gratis alcanzado */}
       {hasReachedLimit && (
-        <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
-          <p className="text-amber-800 text-sm font-medium">
-            🌟 Alcanzaste tus {FREE_LIMIT} mensajes gratuitos.
+        <div className="mt-4 bg-amber-50/80 backdrop-blur-md border border-amber-200/50 rounded-xl p-4 text-center shadow-sm">
+          <p className="text-amber-800 text-sm font-bold flex items-center justify-center gap-2">
+            <span>🌟</span> Alcanzaste tus {FREE_LIMIT} mensajes gratuitos.
           </p>
-          <p className="text-amber-700 text-xs mt-1">
+          <p className="text-amber-700/80 text-xs font-medium mt-1">
             Próximamente: suscríbete para mensajes ilimitados.
           </p>
         </div>
       )}
 
-      {/* Input area */}
+      {/* Zona de entrada */}
       {!hasReachedLimit && (
-        <div className="mt-3 space-y-2">
-          {/* Location button */}
+        <div className="mt-4 space-y-3">
+          {/* Botón de ubicación */}
           <button
             onClick={handleLocationRequest}
-            disabled={loading || locationLoading || hasReachedLimit}
-            className="w-full text-sm bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-xl py-2 px-3 transition-colors disabled:opacity-50"
+            disabled={loading || locationLoading}
+            className="w-full text-xs font-bold uppercase tracking-wide bg-[#9FD7E8]/10 hover:bg-[#9FD7E8]/20 text-gray-600 border border-white/60 shadow-sm rounded-xl py-2.5 px-4 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {locationLoading ? "📍 Obteniendo ubicación..." : "📍 Recomiéndame lugares cerca"}
+            {locationLoading ? (
+              <>
+                <span className="animate-pulse">📍</span> Obteniendo ubicación...
+              </>
+            ) : (
+              <>
+                <span>📍</span> Recomiéndame lugares cerca
+              </>
+            )}
           </button>
 
-          {/* Message input */}
-          <div className="flex gap-2">
+          {/* Input de mensaje */}
+          <div className="flex gap-2 relative">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu pregunta..."
-              disabled={loading || hasReachedLimit}
-              className="flex-1 border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-300 disabled:bg-gray-100"
+              disabled={loading}
+              className="flex-1 bg-white/70 backdrop-blur-sm border border-white/60 shadow-inner rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#B19CD9]/50 focus:bg-white transition-all disabled:opacity-50"
             />
             <button
               onClick={() => handleSend()}
-              disabled={!input.trim() || loading || hasReachedLimit}
-              className="bg-rose-500 hover:bg-rose-600 text-white rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              
-
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-2">
-              <div className="flex space-x-1">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600">
-            ⚠️ {error}
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Freemium limit */}
-      {limitReached && (
-        <div className="mx-4 mb-3 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-center">
-          <p className="font-semibold text-yellow-800">
-            🌟 ¡Has usado tus {FREE_MESSAGE_LIMIT} mensajes gratis!
-          </p>
-          <p className="text-yellow-700 mt-1">
-            Suscríbete a Au Pair Go Premium para mensajes ilimitados y más
-            funciones.
-          </p>
-          <button className="mt-2 bg-yellow-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-yellow-600 transition-colors">
-            Ver planes Premium
-          </button>
-        </div>
-      )}
-
-      {/* Input */}
-      {!limitReached && (
-        <div className="p-3 border-t border-gray-100">
-          <div className="flex gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Escribe tu pregunta aquí..."
-              className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 min-h-[44px] max-h-[120px]"
-              rows={1}
-              disabled={loading}
-              maxLength={2000}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={loading || !input.trim()}
-              className="bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
- main
+              disabled={!input.trim() || loading}
+              className="bg-gradient-to-r from-[#9FD7E8] to-[#B19CD9] hover:opacity-90 text-white rounded-xl px-6 py-3 text-sm font-bold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0"
             >
               Enviar
             </button>
           </div>
- copilot/au-pair-go-mvp-structure
         </div>
       )}
 
-      {/* Clear chat */}
-      {messages.length > 0 && (
-        <button
-          onClick={clearChat}
-          className="mt-2 text-xs text-gray-400 hover:text-gray-600 text-right self-end"
-        >
-          Limpiar conversación
-        </button>
-      )}
-
-          <p className="text-xs text-gray-400 mt-1.5 text-center">
-            Presiona Enter para enviar · Shift+Enter para nueva línea
-          </p>
-        </div>
-      )}
- main
+      {/* Botón limpiar chat */}
+      <div className="flex items-center justify-between mt-3 px-1">
+        <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
+          Enter para enviar · Shift+Enter para salto
+        </p>
+        {messages.length > 0 && (
+          <button
+            onClick={clearChat}
+            className="text-xs font-bold text-gray-400 hover:text-rose-500 transition-colors"
+          >
+            Limpiar chat
+          </button>
+        )}
+      </div>
     </div>
   );
 }
